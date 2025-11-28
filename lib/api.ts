@@ -37,7 +37,7 @@ apiClient.interceptors.response.use(
   }
 );
 
-export async function fetchDashboardData(studentId?: string) {
+export async function fetchDashboardData() {
   // Mock data for development - replace with actual API call
   return {
     fees: {

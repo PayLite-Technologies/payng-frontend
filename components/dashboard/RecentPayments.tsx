@@ -8,7 +8,6 @@ import {
   FaTimesCircle,
 } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-import clsx from "clsx";
 
 interface Payment {
   id: string;

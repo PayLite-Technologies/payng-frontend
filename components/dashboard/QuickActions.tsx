@@ -21,7 +21,7 @@ export default function QuickActions() {
     try {
       await generateSampleReceipt();
       toast.success("Receipt downloaded successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to generate receipt");
     } finally {
       setIsGeneratingPDF(false);

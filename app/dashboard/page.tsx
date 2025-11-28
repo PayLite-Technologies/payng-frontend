@@ -18,7 +18,7 @@ export default function DashboardPage() {
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["dashboard", selectedStudent?.id],
-    queryFn: () => fetchDashboardData(selectedStudent?.id),
+    queryFn: () => fetchDashboardData(),
     refetchOnWindowFocus: false,
   });
 
@@ -69,7 +69,7 @@ export default function DashboardPage() {
             Welcome back, {user?.name || "Guardian"}
           </h1>
           <p style={{ color: "#808080", fontFamily: "Inter, sans-serif" }}>
-            Manage your student's fees and payments in one place
+            Manage your student&apos;s fees and payments in one place
           </p>
         </motion.div>
 
