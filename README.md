@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Payng Frontend
+
+Next.js 15 App Router dashboard for Payng. It uses Turbopack for dev/build, Tailwind CSS v4, shadcn/ui primitives, TanStack Query for server cache, Zustand for local state, and React Hook Form + Zod for forms.
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# install deps (choose one)
+bun install
+# or npm install
+
+# develop
+bun run dev     # Turbopack dev server on http://localhost:3000
+
+# lint & build
+bun run lint
+bun run build && bun run start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Environment variables live in `.env.local`. Set anything the backend expects plus `NEXT_PUBLIC_*` values for client-side usage (e.g. API base URLs).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+payng-frontend
+├── app/                  # Next.js App Router entries and providers
+│   ├── layout.tsx        # Root layout that wires fonts + themes
+│   ├── page.tsx          # Marketing/landing page
+│   ├── dashboard/        # Authenticated dashboard route
+│   ├── profile/          # User profile route
+│   └── providers.tsx     # Query client + theme providers
+├── components/
+│   ├── layouts/          # Shell layouts (e.g. dashboard chrome)
+│   ├── dashboard/        # Feature widgets (cards, tables, actions)
+│   └── ui/               # Reusable shadcn-derived primitives
+├── lib/
+│   ├── api.ts            # Axios client + mock data helpers
+│   ├── pdfGenerator.tsx  # React-PDF template for receipts
+│   └── utils.ts          # Misc view helpers
+├── stores/               # Zustand slices (e.g. dashboardStore)
+├── public/               # Static assets served by Next.js
+├── globals.css           # Tailwind entry (imports layer directives)
+├── components.json       # shadcn-ui generator manifest
+├── next.config.ts        # Next.js + Turbopack settings
+└── tsconfig.json         # Path aliases & TS compiler options
+```
 
-## Learn More
+## Development Notes
 
-To learn more about Next.js, take a look at the following resources:
+- API calls currently point to `/api` with mocked data in `lib/api.ts`; swap in real backend routes once available.
+- Most UI pieces are decoupled and live under `components/dashboard` or `components/ui`; prefer composing existing atoms before adding new ones.
+- `stores/dashboardStore.tsx` keeps view state (selected student, filters). Fetching/caching should go through TanStack Query in `app/providers.tsx`.
+- Tailwind CSS v4 is configured via `postcss.config.mjs`; no traditional `tailwind.config.js` file is required.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Testing & Linting
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Run `bun run lint` for ESLint (Next.js + TypeScript rules).
+- Component-level testing is not set up yet; add Playwright or Vitest when UI automation becomes necessary.
