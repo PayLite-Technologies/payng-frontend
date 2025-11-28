@@ -2,10 +2,10 @@
 
 import { motion } from "framer-motion";
 import { FaUserGraduate, FaChevronDown } from "react-icons/fa";
-import { useDashboardStore } from "@/stores/dashboardStore";
+import { useUserStore } from "@/stores/userStore";
 
 export default function StudentSelector() {
-  const { students, selectedStudent, setSelectedStudent } = useDashboardStore();
+  const { students, selectedStudent, setSelectedStudent } = useUserStore();
 
   if (!students || students.length === 0) {
     return null;

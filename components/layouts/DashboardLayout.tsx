@@ -13,18 +13,14 @@ import {
   FaBars,
   FaTimes,
   FaBell,
+  FaFileInvoice,
+  FaCalendarAlt,
+  FaUniversity,
+  FaChartLine,
 } from "react-icons/fa";
 import clsx from "clsx";
-import { useDashboardStore } from "@/stores/dashboardStore";
+import { useUserStore } from "@/stores/userStore";
 import { cn } from "@/lib/utils";
-
-const navItems = [
-  { label: "Dashboard", icon: FaHome, href: "/dashboard" },
-  { label: "Payments", icon: FaWallet, href: "/payments" },
-  { label: "History", icon: FaHistory, href: "/history" },
-  { label: "Profile", icon: FaUser, href: "/profile" },
-  { label: "Settings", icon: FaCog, href: "/settings" },
-];
 
 export default function DashboardLayout({
   children,
@@ -33,12 +29,71 @@ export default function DashboardLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const router = useRouter();
-  const { user, clearStore } = useDashboardStore();
+  const { user, logout, isParent, isStudent, isInstitutionAdmin, isSuperAdmin, isFinance, isSupport, isMerchant } = useUserStore();
 
   const handleLogout = () => {
-    clearStore();
+    logout();
     router.push("/login");
   };
+
+  // Role-based navigation items
+  const getNavItems = () => {
+    if (isParent()) {
+      return [
+        { label: "Dashboard", icon: FaHome, href: "/dashboard" },
+        { label: "Students", icon: FaUser, href: "/students" },
+        { label: "Invoices", icon: FaFileInvoice, href: "/invoices" },
+        { label: "Payments", icon: FaWallet, href: "/payments" },
+        { label: "Payment Plans", icon: FaCalendarAlt, href: "/payment-plans" },
+        { label: "History", icon: FaHistory, href: "/payment-history" },
+        { label: "Profile", icon: FaUser, href: "/profile" },
+      ];
+    }
+    if (isStudent()) {
+      return [
+        { label: "Dashboard", icon: FaHome, href: "/dashboard" },
+        { label: "Fees", icon: FaFileInvoice, href: "/invoices" },
+        { label: "History", icon: FaHistory, href: "/payment-history" },
+        { label: "Profile", icon: FaUser, href: "/profile" },
+      ];
+    }
+    if (isInstitutionAdmin()) {
+      return [
+        { label: "Dashboard", icon: FaHome, href: "/dashboard" },
+        { label: "Students", icon: FaUser, href: "/students" },
+        { label: "Invoices", icon: FaFileInvoice, href: "/invoices" },
+        { label: "Fee Structure", icon: FaCog, href: "/admin/fee-structure" },
+        { label: "Fee Assignments", icon: FaCog, href: "/admin/fee-assignments" },
+        { label: "Reconciliation", icon: FaWallet, href: "/admin/reconciliation" },
+        { label: "Reports", icon: FaChartLine, href: "/admin/reports" },
+        { label: "Profile", icon: FaUser, href: "/profile" },
+      ];
+    }
+    if (isSuperAdmin()) {
+      return [
+        { label: "Dashboard", icon: FaHome, href: "/dashboard" },
+        { label: "Institutions", icon: FaUniversity, href: "/institutions" },
+        { label: "Users", icon: FaUser, href: "/admin/users" },
+        { label: "Staff", icon: FaCog, href: "/admin/staff" },
+        { label: "Reports", icon: FaChartLine, href: "/reports" },
+        { label: "Profile", icon: FaUser, href: "/profile" },
+      ];
+    }
+    if (isFinance() || isSupport() || isMerchant()) {
+      return [
+        { label: "Dashboard", icon: FaHome, href: "/dashboard" },
+        { label: "Reconciliation", icon: FaWallet, href: "/admin/reconciliation" },
+        { label: "Reports", icon: FaChartLine, href: "/admin/reports" },
+        { label: "Profile", icon: FaUser, href: "/profile" },
+      ];
+    }
+    return [
+      { label: "Dashboard", icon: FaHome, href: "/dashboard" },
+      { label: "Profile", icon: FaUser, href: "/profile" },
+    ];
+  };
+
+  const navItems = getNavItems();
 
   return (
     <div className="min-h-screen bg-white flex">

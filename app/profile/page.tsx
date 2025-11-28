@@ -1,542 +1,588 @@
-// ============================================================================
-// FILE: /app/payments/page.tsx
-// Payment Processing Screen - Make new payments
-// ============================================================================
-
 "use client";
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
+import Link from "next/link";
+import { useEffect } from "react";
+import type { InputHTMLAttributes } from "react";
+import { useForm, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
-import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-  FaCreditCard,
-  FaMobileAlt,
-  FaUniversity,
-  FaWallet,
-  FaShieldAlt,
-  FaCheckCircle,
-  FaLock,
-} from "react-icons/fa";
+import { FaLink, FaUserCheck, FaUserFriends, FaUserShield } from "react-icons/fa";
 import clsx from "clsx";
-import DashboardLayout from "@/components/layouts/DashboardLayout";
-import { useDashboardStore } from "@/stores/dashboardStore";
 
-const paymentSchema = z.object({
-  amount: z.string().min(1, "Amount is required"),
-  paymentMethod: z.enum(
-    ["card", "mobile", "bank", "wallet"],
-    "Payment method is required"
-  ),
-  feeTypes: z.array(z.string()).min(1, "Select at least one fee type"),
-  cardNumber: z.string().optional(),
-  cardExpiry: z.string().optional(),
-  cardCVV: z.string().optional(),
-  phoneNumber: z.string().optional(),
-  accountNumber: z.string().optional(),
+import DashboardLayout from "@/components/layouts/DashboardLayout";
+import { useUserStore, type Student } from "@/stores/userStore";
+import RoleGate from "@/components/auth/RoleGate";
+import { Badge } from "@/components/ui/badge";
+
+const baseProfileSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  phoneNumber: z.string().min(7, "Phone number is required"),
+  profileImageUrl: z
+    .string()
+    .optional()
+    .refine(
+      (value) => !value || value.startsWith("http"),
+      "Provide a valid image URL"
+    ),
+  isPublicProfile: z.boolean().default(true),
 });
 
-type PaymentFormData = z.infer<typeof paymentSchema>;
+const adminFormSchema = z.object({
+  adminLevel: z.enum(["institution", "platform", "support", "finance", "merchant"], {
+    required_error: "Select an admin level",
+  }),
+  permissions: z.array(z.string()).min(1, "Select at least one permission"),
+});
 
-export default function PaymentsPage() {
-  const [selectedMethod, setSelectedMethod] = useState<string>("card");
-  const { selectedStudent } = useDashboardStore();
+const linkStudentSchema = z.object({
+  studentId: z.string().min(3, "Provide a valid student ID"),
+  relationship: z.enum(["parent", "guardian"]),
+});
 
+type BaseProfileFormValues = z.infer<typeof baseProfileSchema>;
+type AdminFormValues = z.infer<typeof adminFormSchema>;
+type LinkStudentFormValues = z.infer<typeof linkStudentSchema>;
+
+const adminPermissions = [
+  { key: "manage_students", label: "Manage Students" },
+  { key: "approve_fees", label: "Approve Fee Schedules" },
+  { key: "view_finance", label: "View Financial Reports" },
+  { key: "manage_admins", label: "Manage Admin Users" },
+  { key: "support_override", label: "Support Overrides" },
+];
+
+const roleMeta: Record<
+  string,
+  {
+    label: string;
+    background: string;
+    color: string;
+  }
+> = {
+  parent: { label: "Parent", background: "#F0F8FF", color: "#000080" },
+  guardian: { label: "Guardian", background: "#FFF7E6", color: "#B45309" },
+  student: { label: "Student", background: "#ECFDF5", color: "#047857" },
+  institution_admin: { label: "Institution Admin", background: "#EEF2FF", color: "#3730A3" },
+  super_admin: { label: "Super Admin", background: "#FEF3C7", color: "#92400E" },
+  support: { label: "Support", background: "#FDF2F8", color: "#9D174D" },
+  finance: { label: "Finance", background: "#F0FDFA", color: "#065F46" },
+  merchant: { label: "Merchant", background: "#FFF1F2", color: "#B91C1C" },
+  anonymous: { label: "Anonymous", background: "#E5E7EB", color: "#374151" },
+};
+
+export default function ProfilePage() {
   const {
-    register,
-    handleSubmit,
-    watch,
-    setValue,
-    formState: { errors },
-  } = useForm<PaymentFormData>({
-    resolver: zodResolver(paymentSchema),
+    user,
+    students,
+    isParent,
+    isGuardian,
+    isStudent,
+    isInstitutionAdmin,
+    isSuperAdmin,
+    isFinance,
+    isSupport,
+    isMerchant,
+    updateUser,
+  } = useUserStore();
+
+  const role = user?.role ?? "anonymous";
+  const isAuthenticated = Boolean(user);
+  const isAdminRole =
+    isInstitutionAdmin() || isSuperAdmin() || isFinance() || isSupport() || isMerchant();
+
+  const baseForm = useForm<BaseProfileFormValues>({
+    resolver: zodResolver(baseProfileSchema),
     defaultValues: {
-      paymentMethod: "card",
-      feeTypes: [],
+      firstName: user?.name?.split(" ")?.[0] || "",
+      lastName: user?.name?.split(" ")?.slice(1).join(" ") || "",
+      phoneNumber: user?.phoneNumber || "",
+      profileImageUrl: user?.profileImageUrl || "",
+      isPublicProfile: user?.publicProfile ?? true,
     },
   });
 
-  const paymentMutation = useMutation({
-    mutationFn: async (data: PaymentFormData) => {
-      // Payment processing will be implemented
-      return Promise.resolve(data);
-    },
-    onSuccess: () => {
-      toast.success("Payment processed successfully!", {
-        description: "Your receipt has been sent to your email",
-      });
-    },
-    onError: (error: Error) => {
-      toast.error("Payment failed", {
-        description: error.message || "Please try again",
-      });
+  const adminForm = useForm<AdminFormValues>({
+    resolver: zodResolver(adminFormSchema),
+    defaultValues: {
+      adminLevel: (user?.adminLevel as AdminFormValues["adminLevel"]) || "institution",
+      permissions: user?.permissions || ["manage_students"],
     },
   });
 
-  const onSubmit = (data: PaymentFormData) => {
-    paymentMutation.mutate(data);
+  const linkForm = useForm<LinkStudentFormValues>({
+    resolver: zodResolver(linkStudentSchema),
+    defaultValues: {
+      studentId: "",
+      relationship: isParent() ? "parent" : "guardian",
+    },
+  });
+
+  useEffect(() => {
+    if (!user) return;
+    const [firstName, ...rest] = user.name?.split(" ") ?? ["", ""];
+    baseForm.reset({
+      firstName: firstName || "",
+      lastName: rest.join(" "),
+      phoneNumber: user.phoneNumber || "",
+      profileImageUrl: user.profileImageUrl || "",
+      isPublicProfile: user.publicProfile ?? true,
+    });
+  }, [baseForm, user]);
+
+  useEffect(() => {
+    if (!user) return;
+    adminForm.reset({
+      adminLevel: (user.adminLevel as AdminFormValues["adminLevel"]) || "institution",
+      permissions: user.permissions || ["manage_students"],
+    });
+  }, [adminForm, user]);
+
+  useEffect(() => {
+    linkForm.reset({
+      studentId: "",
+      relationship: isParent() ? "parent" : "guardian",
+    });
+  }, [isParent, linkForm]);
+
+  const handleProfileSubmit = (values: BaseProfileFormValues) => {
+    if (!user) {
+      toast.error("Please sign in to update your profile.");
+      return;
+    }
+
+    updateUser({
+      name: `${values.firstName} ${values.lastName}`.trim(),
+      phoneNumber: values.phoneNumber,
+      profileImageUrl: values.profileImageUrl || user.profileImageUrl,
+      publicProfile: values.isPublicProfile,
+    });
+
+    toast.success("Profile saved", {
+      description: values.isPublicProfile
+        ? "Public profile is visible to guardians and students."
+        : "Only you and platform admins can see this profile.",
+    });
   };
 
-  const paymentMethods = [
-    { id: "card", label: "Credit/Debit Card", icon: FaCreditCard },
-    { id: "mobile", label: "Mobile Money", icon: FaMobileAlt },
-    { id: "bank", label: "Bank Transfer", icon: FaUniversity },
-    { id: "wallet", label: "Wallet", icon: FaWallet },
-  ];
+  const handleAdminSubmit = (values: AdminFormValues) => {
+    if (!user) return;
 
-  const availableFees = [
-    {
-      id: "tuition",
-      label: "Tuition Fee",
-      amount: 1200.0,
-      dueDate: "2024-11-01",
-    },
-    { id: "lab", label: "Lab Fee", amount: 300.0, dueDate: "2024-10-25" },
-    { id: "sports", label: "Sports Fee", amount: 200.0, dueDate: "2024-11-10" },
-    {
-      id: "library",
-      label: "Library Fee",
-      amount: 150.0,
-      dueDate: "2024-10-30",
-    },
-  ];
+    updateUser({
+      adminLevel: values.adminLevel,
+      permissions: values.permissions,
+    });
 
-  const selectedFees = watch("feeTypes") || [];
-  const totalAmount = availableFees
-    .filter((fee) => selectedFees.includes(fee.id))
-    .reduce((sum, fee) => sum + fee.amount, 0);
+    toast.success("Admin permissions updated", {
+      description: `${values.permissions.length} permission(s) applied.`,
+    });
+  };
+
+  const handleLinkStudent = (values: LinkStudentFormValues) => {
+    toast.success("Student link requested", {
+      description: `Student ID ${values.studentId} will be verified.`,
+    });
+    linkForm.reset({
+      studentId: "",
+      relationship: values.relationship,
+    });
+  };
+
+  const activeRoleStyles = roleMeta[role] || roleMeta.anonymous;
 
   return (
     <DashboardLayout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="flex flex-col gap-4"
         >
-          <h1
-            className="text-3xl font-bold mb-2"
-            style={{ color: "#000080", fontFamily: "Poppins, sans-serif" }}
-          >
-            Make Payment
-          </h1>
-          <p style={{ color: "#808080", fontFamily: "Inter, sans-serif" }}>
-            Process payments for {selectedStudent?.name || "your student"}
-          </p>
-        </motion.div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Payment Form */}
-          <div className="lg:col-span-2">
-            <form onSubmit={handleSubmit(onSubmit)}>
-              {/* Select Fees */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white border border-gray-200 rounded-lg p-6 mb-6"
-                style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
-              >
-                <h2
-                  className="text-xl font-bold mb-4"
-                  style={{
-                    color: "#000080",
-                    fontFamily: "Poppins, sans-serif",
-                  }}
-                >
-                  Select Fees to Pay
-                </h2>
-
-                <div className="space-y-3">
-                  {availableFees.map((fee) => (
-                    <label
-                      key={fee.id}
-                      className={clsx(
-                        "flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-all duration-300",
-                        selectedFees.includes(fee.id)
-                          ? "border-[#90EE90] bg-gray-50"
-                          : "border-gray-200 hover:border-gray-300"
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          value={fee.id}
-                          {...register("feeTypes")}
-                          className="w-5 h-5 rounded"
-                          style={{ accentColor: "#90EE90" }}
-                        />
-                        <div>
-                          <p
-                            className="font-medium"
-                            style={{
-                              color: "#333333",
-                              fontFamily: "Inter, sans-serif",
-                            }}
-                          >
-                            {fee.label}
-                          </p>
-                          <p className="text-xs" style={{ color: "#808080" }}>
-                            Due: {fee.dueDate}
-                          </p>
-                        </div>
-                      </div>
-                      <p
-                        className="text-lg font-semibold"
-                        style={{ color: "#000080" }}
-                      >
-                        ${fee.amount.toFixed(2)}
-                      </p>
-                    </label>
-                  ))}
-                </div>
-
-                {errors.feeTypes && (
-                  <p className="mt-2 text-sm text-red-600">
-                    {errors.feeTypes.message}
-                  </p>
-                )}
-              </motion.div>
-
-              {/* Payment Method Selection */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="bg-white border border-gray-200 rounded-lg p-6 mb-6"
-                style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
-              >
-                <h2
-                  className="text-xl font-bold mb-4"
-                  style={{
-                    color: "#000080",
-                    fontFamily: "Poppins, sans-serif",
-                  }}
-                >
-                  Payment Method
-                </h2>
-
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                  {paymentMethods.map((method) => {
-                    const Icon = method.icon;
-                    return (
-                      <motion.button
-                        key={method.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedMethod(method.id);
-                          setValue("paymentMethod", method.id as "card" | "mobile" | "bank" | "wallet");
-                        }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className={clsx(
-                          "flex flex-col items-center gap-2 p-4 border rounded-lg transition-all duration-300",
-                          selectedMethod === method.id
-                            ? "border-[#90EE90] bg-gray-50"
-                            : "border-gray-200 hover:border-gray-300"
-                        )}
-                      >
-                        <Icon
-                          className="w-8 h-8"
-                          style={{
-                            color:
-                              selectedMethod === method.id
-                                ? "#90EE90"
-                                : "#808080",
-                          }}
-                        />
-                        <span
-                          className="text-sm font-medium"
-                          style={{
-                            color:
-                              selectedMethod === method.id
-                                ? "#000080"
-                                : "#808080",
-                            fontFamily: "Inter, sans-serif",
-                          }}
-                        >
-                          {method.label}
-                        </span>
-                      </motion.button>
-                    );
-                  })}
-                </div>
-
-                {/* Payment Details Based on Method */}
-                {selectedMethod === "card" && (
-                  <div className="space-y-4">
-                    <div>
-                      <label
-                        className="block text-sm font-medium mb-2"
-                        style={{ color: "#666666" }}
-                      >
-                        Card Number
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="1234 5678 9012 3456"
-                        {...register("cardNumber")}
-                        className="w-full px-4 py-3 border border-gray-300 rounded focus:outline-none transition-all duration-300"
-                        style={{ color: "#333333" }}
-                        onFocus={(e) =>
-                          (e.target.style.borderColor = "#D4AF37")
-                        }
-                        onBlur={(e) => (e.target.style.borderColor = "#E0E0E0")}
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label
-                          className="block text-sm font-medium mb-2"
-                          style={{ color: "#666666" }}
-                        >
-                          Expiry Date
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="MM/YY"
-                          {...register("cardExpiry")}
-                          className="w-full px-4 py-3 border border-gray-300 rounded focus:outline-none transition-all duration-300"
-                          style={{ color: "#333333" }}
-                          onFocus={(e) =>
-                            (e.target.style.borderColor = "#D4AF37")
-                          }
-                          onBlur={(e) =>
-                            (e.target.style.borderColor = "#E0E0E0")
-                          }
-                        />
-                      </div>
-                      <div>
-                        <label
-                          className="block text-sm font-medium mb-2"
-                          style={{ color: "#666666" }}
-                        >
-                          CVV
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="123"
-                          {...register("cardCVV")}
-                          className="w-full px-4 py-3 border border-gray-300 rounded focus:outline-none transition-all duration-300"
-                          style={{ color: "#333333" }}
-                          onFocus={(e) =>
-                            (e.target.style.borderColor = "#D4AF37")
-                          }
-                          onBlur={(e) =>
-                            (e.target.style.borderColor = "#E0E0E0")
-                          }
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {selectedMethod === "mobile" && (
-                  <div>
-                    <label
-                      className="block text-sm font-medium mb-2"
-                      style={{ color: "#666666" }}
-                    >
-                      Mobile Number
-                    </label>
-                    <input
-                      type="tel"
-                      placeholder="+1 (555) 123-4567"
-                      {...register("phoneNumber")}
-                      className="w-full px-4 py-3 border border-gray-300 rounded focus:outline-none transition-all duration-300"
-                      style={{ color: "#333333" }}
-                      onFocus={(e) => (e.target.style.borderColor = "#D4AF37")}
-                      onBlur={(e) => (e.target.style.borderColor = "#E0E0E0")}
-                    />
-                  </div>
-                )}
-
-                {selectedMethod === "bank" && (
-                  <div>
-                    <label
-                      className="block text-sm font-medium mb-2"
-                      style={{ color: "#666666" }}
-                    >
-                      Account Number
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter account number"
-                      {...register("accountNumber")}
-                      className="w-full px-4 py-3 border border-gray-300 rounded focus:outline-none transition-all duration-300"
-                      style={{ color: "#333333" }}
-                      onFocus={(e) => (e.target.style.borderColor = "#D4AF37")}
-                      onBlur={(e) => (e.target.style.borderColor = "#E0E0E0")}
-                    />
-                  </div>
-                )}
-
-                {selectedMethod === "wallet" && (
-                  <div
-                    className="p-4 rounded-lg text-center"
-                    style={{ backgroundColor: "#F5F5F5" }}
-                  >
-                    <FaWallet
-                      className="w-12 h-12 mx-auto mb-2"
-                      style={{ color: "#90EE90" }}
-                    />
-                    <p className="text-sm" style={{ color: "#333333" }}>
-                      Your wallet balance: <strong>$500.00</strong>
-                    </p>
-                  </div>
-                )}
-
-                {/* Security Notice */}
-                <div
-                  className="mt-4 p-3 rounded flex items-start gap-2"
-                  style={{ backgroundColor: "#F0F8FF" }}
-                >
-                  <FaShieldAlt
-                    className="w-5 h-5 mt-0.5"
-                    style={{ color: "#000080" }}
-                  />
-                  <p className="text-xs" style={{ color: "#666666" }}>
-                    <FaLock className="inline w-3 h-3 mr-1" />
-                    Your payment information is encrypted and secure
-                  </p>
-                </div>
-              </motion.div>
-
-              {/* Submit Button */}
-              <motion.button
-                type="submit"
-                disabled={
-                  paymentMutation.isPending || selectedFees.length === 0
-                }
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full py-4 rounded-full text-base font-semibold transition-all duration-300 disabled:opacity-50"
-                style={{
-                  backgroundColor: "#000080",
-                  color: "#FFFFFF",
-                  fontFamily: "Poppins, sans-serif",
-                }}
-              >
-                {paymentMutation.isPending
-                  ? "Processing..."
-                  : `Pay $${totalAmount.toFixed(2)}`}
-              </motion.button>
-            </form>
-          </div>
-
-          {/* Right Column - Summary */}
-          <div>
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="bg-white border border-gray-200 rounded-lg p-6 sticky top-24"
-              style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
-            >
-              <h2
-                className="text-xl font-bold mb-4"
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h1
+                className="text-3xl font-bold"
                 style={{ color: "#000080", fontFamily: "Poppins, sans-serif" }}
               >
-                Payment Summary
-              </h2>
+                Profile
+              </h1>
+              <p className="text-sm text-gray-500">
+                Shared profile with role-based controls and linked entities.
+              </p>
+            </div>
+            <Badge
+              className="text-xs px-4 py-2 rounded-full"
+              style={{
+                backgroundColor: activeRoleStyles.background,
+                color: activeRoleStyles.color,
+                border: "none",
+              }}
+            >
+              {activeRoleStyles.label}
+            </Badge>
+          </div>
+        </motion.div>
 
-              <div className="space-y-3 mb-6">
-                {selectedFees.length === 0 ? (
-                  <p className="text-sm" style={{ color: "#808080" }}>
-                    No fees selected
+        {!isAuthenticated ? (
+          <AnonymousProfileView />
+        ) : (
+          <>
+            <motion.section
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white border border-gray-200 rounded-2xl p-6 space-y-6"
+              style={{ boxShadow: "0 12px 30px rgba(15,23,42,0.08)" }}
+            >
+              <div className="flex items-center gap-3">
+                <FaUserCheck className="text-[#000080]" />
+                <div>
+                  <h2 className="text-xl font-semibold text-[#000080]">Identity & Preferences</h2>
+                  <p className="text-sm text-gray-500">
+                    Base information shared across all Payng experiences.
                   </p>
-                ) : (
-                  availableFees
-                    .filter((fee) => selectedFees.includes(fee.id))
-                    .map((fee) => (
-                      <div key={fee.id} className="flex justify-between">
-                        <span className="text-sm" style={{ color: "#666666" }}>
-                          {fee.label}
-                        </span>
-                        <span
-                          className="text-sm font-medium"
-                          style={{ color: "#333333" }}
-                        >
-                          ${fee.amount.toFixed(2)}
-                        </span>
-                      </div>
-                    ))
-                )}
-              </div>
-
-              <div
-                className="pt-4 mb-6"
-                style={{ borderTop: "1px solid #E0E0E0" }}
-              >
-                <div className="flex justify-between items-center">
-                  <span
-                    className="text-lg font-bold"
-                    style={{
-                      color: "#000080",
-                      fontFamily: "Poppins, sans-serif",
-                    }}
-                  >
-                    Total
-                  </span>
-                  <span
-                    className="text-2xl font-bold"
-                    style={{ color: "#000080" }}
-                  >
-                    ${totalAmount.toFixed(2)}
-                  </span>
                 </div>
               </div>
 
-              {/* Benefits */}
-              <div
-                className="p-4 rounded-lg"
-                style={{ backgroundColor: "#F5F5F5" }}
-              >
-                <p
-                  className="text-sm font-medium mb-2"
-                  style={{ color: "#000080" }}
+              <form onSubmit={baseForm.handleSubmit(handleProfileSubmit)} className="grid gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Field
+                    label="First Name"
+                    error={baseForm.formState.errors.firstName?.message}
+                    inputProps={{
+                      ...baseForm.register("firstName"),
+                      placeholder: "Jane",
+                    }}
+                  />
+                  <Field
+                    label="Last Name"
+                    error={baseForm.formState.errors.lastName?.message}
+                    inputProps={{
+                      ...baseForm.register("lastName"),
+                      placeholder: "Doe",
+                    }}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Field
+                    label="Phone Number"
+                    error={baseForm.formState.errors.phoneNumber?.message}
+                    inputProps={{
+                      ...baseForm.register("phoneNumber"),
+                      placeholder: "+234 800 000 0000",
+                    }}
+                  />
+                  <Field
+                    label="Profile Image URL"
+                    error={baseForm.formState.errors.profileImageUrl?.message}
+                    inputProps={{
+                      ...baseForm.register("profileImageUrl"),
+                      placeholder: "https://cdn.payng.co/avatar.png",
+                    }}
+                  />
+                </div>
+
+                <label className="flex items-start gap-3 rounded-xl border border-gray-200 p-4 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="mt-1 h-4 w-4 rounded text-[#000080]"
+                    {...baseForm.register("isPublicProfile")}
+                  />
+                  <div>
+                    <p className="text-sm font-medium text-[#0f172a]">Public profile</p>
+                    <p className="text-xs text-gray-500">
+                      Allow guardians or institution admins to view your summary card when needed.
+                    </p>
+                  </div>
+                </label>
+
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    className={clsx(
+                      "px-6 py-3 rounded-full text-white font-medium transition-all duration-200",
+                      baseForm.formState.isSubmitting ? "opacity-70" : "hover:opacity-90"
+                    )}
+                    style={{ backgroundColor: "#000080" }}
+                    disabled={baseForm.formState.isSubmitting}
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            </motion.section>
+
+            <RoleGate
+              allow={["parent", "guardian"]}
+              suppressRedirect
+              unauthorizedFallback={null}
+            >
+              <ParentGuardianSection
+                students={students}
+                linkForm={linkForm}
+                onSubmit={handleLinkStudent}
+              />
+            </RoleGate>
+
+            <RoleGate allow={["student"]} suppressRedirect unauthorizedFallback={null}>
+              <StudentSummaryCard />
+            </RoleGate>
+
+            <RoleGate
+              allow={["institution_admin", "super_admin", "support", "finance", "merchant"]}
+              suppressRedirect
+              unauthorizedFallback={null}
+            >
+              {isAdminRole && (
+                <motion.section
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white border border-gray-200 rounded-2xl p-6 space-y-6"
+                  style={{ boxShadow: "0 12px 30px rgba(15,23,42,0.08)" }}
                 >
-                  Payment Benefits
-                </p>
-                <ul className="space-y-2">
-                  <li
-                    className="flex items-start gap-2 text-xs"
-                    style={{ color: "#666666" }}
-                  >
-                    <FaCheckCircle
-                      className="w-4 h-4 mt-0.5"
-                      style={{ color: "#90EE90" }}
-                    />
-                    Instant payment confirmation
-                  </li>
-                  <li
-                    className="flex items-start gap-2 text-xs"
-                    style={{ color: "#666666" }}
-                  >
-                    <FaCheckCircle
-                      className="w-4 h-4 mt-0.5"
-                      style={{ color: "#90EE90" }}
-                    />
-                    Automatic receipt generation
-                  </li>
-                  <li
-                    className="flex items-start gap-2 text-xs"
-                    style={{ color: "#666666" }}
-                  >
-                    <FaCheckCircle
-                      className="w-4 h-4 mt-0.5"
-                      style={{ color: "#90EE90" }}
-                    />
-                    Secure encrypted transactions
-                  </li>
-                </ul>
-              </div>
-            </motion.div>
-          </div>
-        </div>
+                  <div className="flex items-center gap-3">
+                    <FaUserShield className="text-[#000080]" />
+                    <div>
+                      <h2 className="text-xl font-semibold text-[#000080]">Admin Controls</h2>
+                      <p className="text-sm text-gray-500">
+                        Configure admin level and scoped permissions.
+                      </p>
+                    </div>
+                  </div>
+
+                  <form onSubmit={adminForm.handleSubmit(handleAdminSubmit)} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-2">
+                          Admin Level
+                        </label>
+                        <select
+                          className="w-full border border-gray-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
+                          {...adminForm.register("adminLevel")}
+                        >
+                          <option value="institution">Institution</option>
+                          <option value="platform">Platform</option>
+                          <option value="support">Support</option>
+                          <option value="finance">Finance</option>
+                          <option value="merchant">Merchant</option>
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Determines default data scope and dashboards.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 mb-3">Permissions</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {adminPermissions.map((permission) => (
+                          <label
+                            key={permission.key}
+                            className="flex items-start gap-3 border border-gray-200 rounded-xl p-3 cursor-pointer hover:border-[#000080]/40 transition"
+                          >
+                            <input
+                              type="checkbox"
+                              value={permission.key}
+                              className="mt-1 h-4 w-4 accent-[#000080]"
+                              {...adminForm.register("permissions")}
+                            />
+                            <span className="text-sm text-gray-700">{permission.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                      {adminForm.formState.errors.permissions?.message && (
+                        <p className="text-xs text-red-500 mt-2">
+                          {adminForm.formState.errors.permissions.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex justify-end">
+                      <button
+                        type="submit"
+                        className={clsx(
+                          "px-6 py-3 rounded-full text-white font-medium transition-all duration-200",
+                          adminForm.formState.isSubmitting ? "opacity-70" : "hover:opacity-90"
+                        )}
+                        style={{ backgroundColor: "#000080" }}
+                        disabled={adminForm.formState.isSubmitting}
+                      >
+                        Save Admin Settings
+                      </button>
+                    </div>
+                  </form>
+                </motion.section>
+              )}
+            </RoleGate>
+          </>
+        )}
       </div>
     </DashboardLayout>
   );
 }
+
+function Field({
+  label,
+  error,
+  inputProps,
+}: {
+  label: string;
+  error?: string;
+  inputProps: InputHTMLAttributes<HTMLInputElement>;
+}) {
+  return (
+    <div className="space-y-1">
+      <label className="block text-sm font-medium text-gray-600">{label}</label>
+      <input
+        {...inputProps}
+        className="w-full border border-gray-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
+      />
+      {error && <p className="text-xs text-red-500">{error}</p>}
+    </div>
+  );
+}
+
+function ParentGuardianSection({
+  students,
+  linkForm,
+  onSubmit,
+}: {
+  students: Student[];
+  linkForm: UseFormReturn<LinkStudentFormValues>;
+  onSubmit: (values: LinkStudentFormValues) => void;
+}) {
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white border border-gray-200 rounded-2xl p-6 space-y-6"
+      style={{ boxShadow: "0 12px 30px rgba(15,23,42,0.08)" }}
+    >
+      <div className="flex items-center gap-3">
+        <FaUserFriends className="text-[#000080]" />
+        <div>
+          <h2 className="text-xl font-semibold text-[#000080]">Linked Students</h2>
+          <p className="text-sm text-gray-500">
+            Parents/guardians manage dependents from this shared screen.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid gap-4">
+        {students.length === 0 ? (
+          <p className="text-sm text-gray-500">No linked students yet.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {students.map((student) => (
+              <div
+                key={student.id}
+                className="border border-gray-200 rounded-xl p-4 space-y-1 bg-gray-50"
+              >
+                <p className="font-semibold text-[#000080]">{student.name}</p>
+                <p className="text-sm text-gray-600">Grade: {student.grade}</p>
+                <p className="text-xs text-gray-500">Student ID: {student.studentId}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <form
+        onSubmit={linkForm.handleSubmit(onSubmit)}
+        className="border border-dashed border-gray-300 rounded-2xl p-4 space-y-4"
+      >
+        <div className="flex items-center gap-2 text-sm font-medium text-gray-600">
+          <FaLink className="text-[#000080]" />
+          Link a new student
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Field
+            label="Student ID"
+            error={linkForm.formState.errors.studentId?.message}
+            inputProps={{
+              ...linkForm.register("studentId"),
+              placeholder: "STU-2024-001",
+            }}
+          />
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-600">
+              Relationship
+            </label>
+            <select
+              className="w-full border border-gray-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
+              {...linkForm.register("relationship")}
+            >
+              <option value="parent">Parent</option>
+              <option value="guardian">Guardian</option>
+            </select>
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            className="px-5 py-2 rounded-full text-white text-sm font-medium"
+            style={{ backgroundColor: "#000080" }}
+            disabled={linkForm.formState.isSubmitting}
+          >
+            Request Link
+          </button>
+        </div>
+      </form>
+    </motion.section>
+  );
+}
+
+function StudentSummaryCard() {
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4"
+      style={{ boxShadow: "0 12px 30px rgba(15,23,42,0.08)" }}
+    >
+      <div className="flex items-center gap-3">
+        <FaUserCheck className="text-[#000080]" />
+        <div>
+          <h2 className="text-xl font-semibold text-[#000080]">Student Safety</h2>
+          <p className="text-sm text-gray-500">
+            Students can download clearance letters and view assigned guardians.
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-3 text-sm">
+        <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100">
+          Status: Active
+        </Badge>
+        <Badge className="bg-blue-50 text-blue-700 border-blue-100">All fees synced</Badge>
+      </div>
+    </motion.section>
+  );
+}
+
+function AnonymousProfileView() {
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4 text-center"
+      style={{ boxShadow: "0 12px 30px rgba(15,23,42,0.08)" }}
+    >
+      <FaUserCheck className="text-4xl text-[#000080] mx-auto" />
+      <h2 className="text-xl font-semibold text-[#000080]">Public Profile Preview</h2>
+      <p className="text-sm text-gray-500">
+        This profile is in view-only mode. Sign in to manage details or link students.
+      </p>
+      <Link
+        href="/login"
+        className="inline-flex items-center justify-center px-6 py-2 rounded-full text-white font-medium"
+        style={{ backgroundColor: "#000080" }}
+      >
+        Sign in to continue
+      </Link>
+    </motion.section>
+  );
+}
+
