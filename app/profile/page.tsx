@@ -8,7 +8,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { FaLink, FaUserCheck, FaUserFriends, FaUserShield } from "react-icons/fa";
+import {
+  FaLink,
+  FaUserCheck,
+  FaUserFriends,
+  FaUserShield,
+} from "react-icons/fa";
 import clsx from "clsx";
 
 import DashboardLayout from "@/components/layouts/DashboardLayout";
@@ -27,14 +32,21 @@ const baseProfileSchema = z.object({
       (value) => !value || value.startsWith("http"),
       "Provide a valid image URL"
     ),
-  isPublicProfile: z.boolean().default(true),
+  isPublicProfile: z.boolean().default(true).optional(),
 });
 
 const adminFormSchema = z.object({
-  adminLevel: z.enum(["institution", "platform", "support", "finance", "merchant"], {
-    required_error: "Select an admin level",
-  }),
-  permissions: z.array(z.string()).min(1, "Select at least one permission"),
+  adminLevel: z
+    .enum(
+      ["institution", "platform", "support", "finance", "merchant"],
+      "Select an admin level"
+    )
+    .default("institution")
+    .optional(),
+  permissions: z
+    .array(z.string())
+    .min(1, "Select at least one permission")
+    .optional(),
 });
 
 const linkStudentSchema = z.object({
@@ -65,8 +77,16 @@ const roleMeta: Record<
   parent: { label: "Parent", background: "#F0F8FF", color: "#000080" },
   guardian: { label: "Guardian", background: "#FFF7E6", color: "#B45309" },
   student: { label: "Student", background: "#ECFDF5", color: "#047857" },
-  institution_admin: { label: "Institution Admin", background: "#EEF2FF", color: "#3730A3" },
-  super_admin: { label: "Super Admin", background: "#FEF3C7", color: "#92400E" },
+  institution_admin: {
+    label: "Institution Admin",
+    background: "#EEF2FF",
+    color: "#3730A3",
+  },
+  super_admin: {
+    label: "Super Admin",
+    background: "#FEF3C7",
+    color: "#92400E",
+  },
   support: { label: "Support", background: "#FDF2F8", color: "#9D174D" },
   finance: { label: "Finance", background: "#F0FDFA", color: "#065F46" },
   merchant: { label: "Merchant", background: "#FFF1F2", color: "#B91C1C" },
@@ -91,7 +111,11 @@ export default function ProfilePage() {
   const role = user?.role ?? "anonymous";
   const isAuthenticated = Boolean(user);
   const isAdminRole =
-    isInstitutionAdmin() || isSuperAdmin() || isFinance() || isSupport() || isMerchant();
+    isInstitutionAdmin() ||
+    isSuperAdmin() ||
+    isFinance() ||
+    isSupport() ||
+    isMerchant();
 
   const baseForm = useForm<BaseProfileFormValues>({
     resolver: zodResolver(baseProfileSchema),
@@ -107,7 +131,8 @@ export default function ProfilePage() {
   const adminForm = useForm<AdminFormValues>({
     resolver: zodResolver(adminFormSchema),
     defaultValues: {
-      adminLevel: (user?.adminLevel as AdminFormValues["adminLevel"]) || "institution",
+      adminLevel:
+        (user?.adminLevel as AdminFormValues["adminLevel"]) || "institution",
       permissions: user?.permissions || ["manage_students"],
     },
   });
@@ -135,7 +160,8 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!user) return;
     adminForm.reset({
-      adminLevel: (user.adminLevel as AdminFormValues["adminLevel"]) || "institution",
+      adminLevel:
+        (user.adminLevel as AdminFormValues["adminLevel"]) || "institution",
       permissions: user.permissions || ["manage_students"],
     });
   }, [adminForm, user]);
@@ -176,7 +202,7 @@ export default function ProfilePage() {
     });
 
     toast.success("Admin permissions updated", {
-      description: `${values.permissions.length} permission(s) applied.`,
+      description: `${values?.permissions?.length} permission(s) applied.`,
     });
   };
 
@@ -238,14 +264,19 @@ export default function ProfilePage() {
               <div className="flex items-center gap-3">
                 <FaUserCheck className="text-[#000080]" />
                 <div>
-                  <h2 className="text-xl font-semibold text-[#000080]">Identity & Preferences</h2>
+                  <h2 className="text-xl font-semibold text-[#000080]">
+                    Identity & Preferences
+                  </h2>
                   <p className="text-sm text-gray-500">
                     Base information shared across all Payng experiences.
                   </p>
                 </div>
               </div>
 
-              <form onSubmit={baseForm.handleSubmit(handleProfileSubmit)} className="grid gap-4">
+              <form
+                onSubmit={baseForm.handleSubmit(handleProfileSubmit)}
+                className="grid gap-4"
+              >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Field
                     label="First Name"
@@ -291,9 +322,12 @@ export default function ProfilePage() {
                     {...baseForm.register("isPublicProfile")}
                   />
                   <div>
-                    <p className="text-sm font-medium text-[#0f172a]">Public profile</p>
+                    <p className="text-sm font-medium text-[#0f172a]">
+                      Public profile
+                    </p>
                     <p className="text-xs text-gray-500">
-                      Allow guardians or institution admins to view your summary card when needed.
+                      Allow guardians or institution admins to view your summary
+                      card when needed.
                     </p>
                   </div>
                 </label>
@@ -303,7 +337,9 @@ export default function ProfilePage() {
                     type="submit"
                     className={clsx(
                       "px-6 py-3 rounded-full text-white font-medium transition-all duration-200",
-                      baseForm.formState.isSubmitting ? "opacity-70" : "hover:opacity-90"
+                      baseForm.formState.isSubmitting
+                        ? "opacity-70"
+                        : "hover:opacity-90"
                     )}
                     style={{ backgroundColor: "#000080" }}
                     disabled={baseForm.formState.isSubmitting}
@@ -326,12 +362,22 @@ export default function ProfilePage() {
               />
             </RoleGate>
 
-            <RoleGate allow={["student"]} suppressRedirect unauthorizedFallback={null}>
+            <RoleGate
+              allow={["student"]}
+              suppressRedirect
+              unauthorizedFallback={null}
+            >
               <StudentSummaryCard />
             </RoleGate>
 
             <RoleGate
-              allow={["institution_admin", "super_admin", "support", "finance", "merchant"]}
+              allow={[
+                "institution_admin",
+                "super_admin",
+                "support",
+                "finance",
+                "merchant",
+              ]}
               suppressRedirect
               unauthorizedFallback={null}
             >
@@ -345,14 +391,19 @@ export default function ProfilePage() {
                   <div className="flex items-center gap-3">
                     <FaUserShield className="text-[#000080]" />
                     <div>
-                      <h2 className="text-xl font-semibold text-[#000080]">Admin Controls</h2>
+                      <h2 className="text-xl font-semibold text-[#000080]">
+                        Admin Controls
+                      </h2>
                       <p className="text-sm text-gray-500">
                         Configure admin level and scoped permissions.
                       </p>
                     </div>
                   </div>
 
-                  <form onSubmit={adminForm.handleSubmit(handleAdminSubmit)} className="space-y-6">
+                  <form
+                    onSubmit={adminForm.handleSubmit(handleAdminSubmit)}
+                    className="space-y-6"
+                  >
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-600 mb-2">
@@ -375,7 +426,9 @@ export default function ProfilePage() {
                     </div>
 
                     <div>
-                      <p className="text-sm font-medium text-gray-600 mb-3">Permissions</p>
+                      <p className="text-sm font-medium text-gray-600 mb-3">
+                        Permissions
+                      </p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {adminPermissions.map((permission) => (
                           <label
@@ -388,7 +441,9 @@ export default function ProfilePage() {
                               className="mt-1 h-4 w-4 accent-[#000080]"
                               {...adminForm.register("permissions")}
                             />
-                            <span className="text-sm text-gray-700">{permission.label}</span>
+                            <span className="text-sm text-gray-700">
+                              {permission.label}
+                            </span>
                           </label>
                         ))}
                       </div>
@@ -404,7 +459,9 @@ export default function ProfilePage() {
                         type="submit"
                         className={clsx(
                           "px-6 py-3 rounded-full text-white font-medium transition-all duration-200",
-                          adminForm.formState.isSubmitting ? "opacity-70" : "hover:opacity-90"
+                          adminForm.formState.isSubmitting
+                            ? "opacity-70"
+                            : "hover:opacity-90"
                         )}
                         style={{ backgroundColor: "#000080" }}
                         disabled={adminForm.formState.isSubmitting}
@@ -463,7 +520,9 @@ function ParentGuardianSection({
       <div className="flex items-center gap-3">
         <FaUserFriends className="text-[#000080]" />
         <div>
-          <h2 className="text-xl font-semibold text-[#000080]">Linked Students</h2>
+          <h2 className="text-xl font-semibold text-[#000080]">
+            Linked Students
+          </h2>
           <p className="text-sm text-gray-500">
             Parents/guardians manage dependents from this shared screen.
           </p>
@@ -482,7 +541,9 @@ function ParentGuardianSection({
               >
                 <p className="font-semibold text-[#000080]">{student.name}</p>
                 <p className="text-sm text-gray-600">Grade: {student.grade}</p>
-                <p className="text-xs text-gray-500">Student ID: {student.studentId}</p>
+                <p className="text-xs text-gray-500">
+                  Student ID: {student.studentId}
+                </p>
               </div>
             ))}
           </div>
@@ -545,7 +606,9 @@ function StudentSummaryCard() {
       <div className="flex items-center gap-3">
         <FaUserCheck className="text-[#000080]" />
         <div>
-          <h2 className="text-xl font-semibold text-[#000080]">Student Safety</h2>
+          <h2 className="text-xl font-semibold text-[#000080]">
+            Student Safety
+          </h2>
           <p className="text-sm text-gray-500">
             Students can download clearance letters and view assigned guardians.
           </p>
@@ -556,7 +619,9 @@ function StudentSummaryCard() {
         <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100">
           Status: Active
         </Badge>
-        <Badge className="bg-blue-50 text-blue-700 border-blue-100">All fees synced</Badge>
+        <Badge className="bg-blue-50 text-blue-700 border-blue-100">
+          All fees synced
+        </Badge>
       </div>
     </motion.section>
   );
@@ -571,9 +636,12 @@ function AnonymousProfileView() {
       style={{ boxShadow: "0 12px 30px rgba(15,23,42,0.08)" }}
     >
       <FaUserCheck className="text-4xl text-[#000080] mx-auto" />
-      <h2 className="text-xl font-semibold text-[#000080]">Public Profile Preview</h2>
+      <h2 className="text-xl font-semibold text-[#000080]">
+        Public Profile Preview
+      </h2>
       <p className="text-sm text-gray-500">
-        This profile is in view-only mode. Sign in to manage details or link students.
+        This profile is in view-only mode. Sign in to manage details or link
+        students.
       </p>
       <Link
         href="/login"
@@ -585,4 +653,3 @@ function AnonymousProfileView() {
     </motion.section>
   );
 }
-

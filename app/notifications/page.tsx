@@ -19,7 +19,7 @@ import { fetchNotifications, type NotificationItem } from "@/lib/api";
 
 const statusMap: Record<
   NotificationItem["status"],
-  { icon: JSX.Element; background: string; border: string; text: string }
+  { icon: React.ReactNode; background: string; border: string; text: string }
 > = {
   info: {
     icon: <FaInfoCircle className="text-blue-600" />,
