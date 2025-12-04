@@ -35,8 +35,14 @@ import {
 const reconciliationSchema = z.object({
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
-  paymentMethod: z.enum(["all", "card", "mobile", "bank", "wallet"]).default("all"),
-  status: z.enum(["all", "completed", "pending", "failed"]).default("all"),
+  paymentMethod: z
+    .enum(["all", "card", "mobile", "bank", "wallet"])
+    .default("all")
+    .optional(),
+  status: z
+    .enum(["all", "completed", "pending", "failed"])
+    .default("all")
+    .optional(),
   studentId: z.string().optional(),
 });
 
@@ -97,7 +103,7 @@ export default function ReconciliationPage() {
         .split("T")[0],
       endDate: new Date().toISOString().split("T")[0],
       paymentMethod: "all",
-      status: "all",
+      status: "all" as const,
     },
   });
 
@@ -214,9 +220,15 @@ export default function ReconciliationPage() {
             className="mb-6 bg-white border border-[#E0E0E0] rounded-lg p-6"
             style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
           >
-            <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="grid grid-cols-1 md:grid-cols-4 gap-4"
+            >
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: "#666666" }}>
+                <label
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: "#666666" }}
+                >
                   Start Date
                 </label>
                 <input
@@ -231,7 +243,10 @@ export default function ReconciliationPage() {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: "#666666" }}>
+                <label
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: "#666666" }}
+                >
                   End Date
                 </label>
                 <input
@@ -246,7 +261,10 @@ export default function ReconciliationPage() {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: "#666666" }}>
+                <label
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: "#666666" }}
+                >
                   Payment Method
                 </label>
                 <select
@@ -261,7 +279,10 @@ export default function ReconciliationPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: "#666666" }}>
+                <label
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: "#666666" }}
+                >
                   Status
                 </label>
                 <select
@@ -354,7 +375,10 @@ export default function ReconciliationPage() {
                 </p>
                 <p
                   className="text-2xl font-bold"
-                  style={{ color: "#000080", fontFamily: "Poppins, sans-serif" }}
+                  style={{
+                    color: "#000080",
+                    fontFamily: "Poppins, sans-serif",
+                  }}
                 >
                   {stat.value}
                 </p>
@@ -387,7 +411,7 @@ export default function ReconciliationPage() {
                   cy="50%"
                   labelLine={false}
                   label={({ name, percent }) =>
-                    `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
+                    `${name} ${((percent as number ?? 0) * 100).toFixed(0)}%`
                   }
                   outerRadius={100}
                   fill="#8884d8"
@@ -396,7 +420,11 @@ export default function ReconciliationPage() {
                   {data?.feeTypeBreakdown.map((entry: any, index: number) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={Object.values(COLORS)[index % Object.values(COLORS).length]}
+                      fill={
+                        Object.values(COLORS)[
+                          index % Object.values(COLORS).length
+                        ]
+                      }
                     />
                   ))}
                 </Pie>
@@ -476,5 +504,3 @@ export default function ReconciliationPage() {
     </DashboardLayout>
   );
 }
-
-
