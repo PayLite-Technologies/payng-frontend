@@ -21,13 +21,14 @@ import { fetchDashboardData } from "@/lib/api";
 import { SkeletonLoader } from "@/components/ui/SkeletonLoader";
 
 const paymentSchema = z.object({
-  amount: z.string().min(1, "Amount is required").refine(
-    (val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0,
-    "Amount must be a positive number"
-  ),
-  paymentMethod: z.enum(["flutterwave", "arca"], {
-    required_error: "Payment method is required",
-  }),
+  amount: z
+    .string()
+    .min(1, "Amount is required")
+    .refine(
+      (val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0,
+      "Amount must be a positive number"
+    ),
+  paymentMethod: z.enum(["flutterwave", "arca"], "Payment method is required"),
   feeTypes: z.array(z.string()).min(1, "Select at least one fee type"),
 });
 
@@ -125,19 +126,25 @@ export default function PaymentsPage() {
                 >
                   <h2
                     className="text-lg font-semibold mb-4"
-                    style={{ color: "#000080", fontFamily: "Poppins, sans-serif" }}
+                    style={{
+                      color: "#000080",
+                      fontFamily: "Poppins, sans-serif",
+                    }}
                   >
                     Student Information
                   </h2>
                   <div className="space-y-2">
                     <p className="text-sm" style={{ color: "#666666" }}>
-                      <span className="font-medium">Name:</span> {selectedStudent.name}
+                      <span className="font-medium">Name:</span>{" "}
+                      {selectedStudent.name}
                     </p>
                     <p className="text-sm" style={{ color: "#666666" }}>
-                      <span className="font-medium">Grade:</span> {selectedStudent.grade}
+                      <span className="font-medium">Grade:</span>{" "}
+                      {selectedStudent.grade}
                     </p>
                     <p className="text-sm" style={{ color: "#666666" }}>
-                      <span className="font-medium">Student ID:</span> {selectedStudent.studentId}
+                      <span className="font-medium">Student ID:</span>{" "}
+                      {selectedStudent.studentId}
                     </p>
                   </div>
                 </motion.div>
@@ -153,7 +160,10 @@ export default function PaymentsPage() {
               >
                 <h2
                   className="text-lg font-semibold mb-4"
-                  style={{ color: "#000080", fontFamily: "Poppins, sans-serif" }}
+                  style={{
+                    color: "#000080",
+                    fontFamily: "Poppins, sans-serif",
+                  }}
                 >
                   Select Fees to Pay
                 </h2>
@@ -173,7 +183,9 @@ export default function PaymentsPage() {
                           className="flex items-center gap-4 p-4 rounded-lg cursor-pointer transition-all duration-300"
                           style={{
                             backgroundColor: isSelected ? "#F0F8FF" : "#F5F5F5",
-                            border: `1px solid ${isSelected ? "#000080" : "#E0E0E0"}`,
+                            border: `1px solid ${
+                              isSelected ? "#000080" : "#E0E0E0"
+                            }`,
                           }}
                         >
                           <input
@@ -184,7 +196,10 @@ export default function PaymentsPage() {
                             style={{ accentColor: "#000080" }}
                           />
                           <div className="flex-1">
-                            <p className="font-medium" style={{ color: "#333333" }}>
+                            <p
+                              className="font-medium"
+                              style={{ color: "#333333" }}
+                            >
                               {fee.category}
                             </p>
                             <p className="text-sm" style={{ color: "#808080" }}>
@@ -193,7 +208,10 @@ export default function PaymentsPage() {
                           </div>
                           <p
                             className="text-lg font-bold"
-                            style={{ color: "#000080", fontFamily: "Poppins, sans-serif" }}
+                            style={{
+                              color: "#000080",
+                              fontFamily: "Poppins, sans-serif",
+                            }}
                           >
                             ${fee.amount.toFixed(2)}
                           </p>
@@ -220,13 +238,20 @@ export default function PaymentsPage() {
               >
                 <h2
                   className="text-lg font-semibold mb-4"
-                  style={{ color: "#000080", fontFamily: "Poppins, sans-serif" }}
+                  style={{
+                    color: "#000080",
+                    fontFamily: "Poppins, sans-serif",
+                  }}
                 >
                   Payment Method
                 </h2>
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    { id: "flutterwave", label: "Flutterwave", icon: FaCreditCard },
+                    {
+                      id: "flutterwave",
+                      label: "Flutterwave",
+                      icon: FaCreditCard,
+                    },
                     { id: "arca", label: "Arca (Proxy)", icon: FaUniversity },
                   ].map((method) => {
                     const Icon = method.icon;
@@ -237,12 +262,13 @@ export default function PaymentsPage() {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         className={`flex items-center gap-3 p-4 rounded-lg cursor-pointer transition-all duration-300 ${
-                          isSelected ? "ring-2" : ""
+                          isSelected ? "ring-2 ring-primary" : ""
                         }`}
                         style={{
                           backgroundColor: isSelected ? "#F0F8FF" : "#F5F5F5",
-                          border: `1px solid ${isSelected ? "#000080" : "#E0E0E0"}`,
-                          ringColor: isSelected ? "#000080" : "transparent",
+                          border: `1px solid ${
+                            isSelected ? "#000080" : "#E0E0E0"
+                          }`,
                         }}
                       >
                         <input
@@ -252,8 +278,14 @@ export default function PaymentsPage() {
                           className="w-4 h-4"
                           style={{ accentColor: "#000080" }}
                         />
-                        <Icon className="w-5 h-5" style={{ color: "#000080" }} />
-                        <span className="font-medium" style={{ color: "#333333" }}>
+                        <Icon
+                          className="w-5 h-5"
+                          style={{ color: "#000080" }}
+                        />
+                        <span
+                          className="font-medium"
+                          style={{ color: "#333333" }}
+                        >
                           {method.label}
                         </span>
                       </motion.label>
@@ -279,7 +311,10 @@ export default function PaymentsPage() {
               >
                 <h2
                   className="text-lg font-semibold mb-4"
-                  style={{ color: "#000080", fontFamily: "Poppins, sans-serif" }}
+                  style={{
+                    color: "#000080",
+                    fontFamily: "Poppins, sans-serif",
+                  }}
                 >
                   Payment Summary
                 </h2>
@@ -289,7 +324,10 @@ export default function PaymentsPage() {
                     <span className="text-sm" style={{ color: "#666666" }}>
                       Selected Fees:
                     </span>
-                    <span className="text-sm font-medium" style={{ color: "#333333" }}>
+                    <span
+                      className="text-sm font-medium"
+                      style={{ color: "#333333" }}
+                    >
                       {selectedFeeIds.length}
                     </span>
                   </div>
@@ -299,20 +337,29 @@ export default function PaymentsPage() {
                       <span className="text-sm" style={{ color: "#666666" }}>
                         Subtotal:
                       </span>
-                      <span className="text-sm font-medium" style={{ color: "#333333" }}>
+                      <span
+                        className="text-sm font-medium"
+                        style={{ color: "#333333" }}
+                      >
                         ${totalAmount.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span
                         className="text-lg font-bold"
-                        style={{ color: "#000080", fontFamily: "Poppins, sans-serif" }}
+                        style={{
+                          color: "#000080",
+                          fontFamily: "Poppins, sans-serif",
+                        }}
                       >
                         Total:
                       </span>
                       <span
                         className="text-2xl font-bold"
-                        style={{ color: "#000080", fontFamily: "Poppins, sans-serif" }}
+                        style={{
+                          color: "#000080",
+                          fontFamily: "Poppins, sans-serif",
+                        }}
                       >
                         ₦{(totalAmount * 1500).toFixed(2)}
                       </span>
@@ -334,8 +381,14 @@ export default function PaymentsPage() {
                   Proceed to Payment
                 </motion.button>
 
-                <div className="mt-4 flex items-center gap-2 text-xs" style={{ color: "#808080" }}>
-                  <FaCheckCircle className="w-3 h-3" style={{ color: "#90EE90" }} />
+                <div
+                  className="mt-4 flex items-center gap-2 text-xs"
+                  style={{ color: "#808080" }}
+                >
+                  <FaCheckCircle
+                    className="w-3 h-3"
+                    style={{ color: "#90EE90" }}
+                  />
                   <span>Secure payment processing</span>
                 </div>
               </motion.div>
@@ -359,5 +412,3 @@ export default function PaymentsPage() {
     </DashboardLayout>
   );
 }
-
-

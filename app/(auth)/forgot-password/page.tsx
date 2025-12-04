@@ -27,6 +27,7 @@ export default function ForgotPasswordPage() {
   });
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
+    console.log("🚀 ~ onSubmit ~ data:", data)
     try {
       // TODO: Replace with real API call
       await new Promise((resolve) => setTimeout(resolve, 1000));

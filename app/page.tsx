@@ -57,8 +57,11 @@ function Counter({ end, duration = 2 }: { end: number; duration?: number }) {
 
     const animate = (currentTime: number) => {
       if (!startTime) startTime = currentTime;
-      const progress = Math.min((currentTime - startTime) / (duration * 1000), 1);
-      
+      const progress = Math.min(
+        (currentTime - startTime) / (duration * 1000),
+        1
+      );
+
       setCount(Math.floor(progress * end));
 
       if (progress < 1) {
@@ -74,7 +77,13 @@ function Counter({ end, duration = 2 }: { end: number; duration?: number }) {
 }
 
 // Section Component with Animation
-function Section({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function Section({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   const controls = useAnimation();
@@ -130,7 +139,10 @@ export default function Home() {
   }, [testimonials.length]);
 
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden" style={{ fontFamily: "Inter, sans-serif" }}>
+    <div
+      className="min-h-screen bg-white overflow-x-hidden"
+      style={{ fontFamily: "Inter, sans-serif" }}
+    >
       {/* Hero Section */}
       <section
         className="relative min-h-screen flex items-center justify-center overflow-hidden"
@@ -138,7 +150,7 @@ export default function Home() {
           background: "linear-gradient(135deg, #000080 0%, #001F3F 100%)",
         }}
       >
-          <Logo />
+        <Logo />
         {/* Animated Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
           {[...Array(20)].map((_, i) => (
@@ -207,7 +219,9 @@ export default function Home() {
               className="text-lg sm:text-xl text-gray-200 mb-10 max-w-3xl mx-auto"
               style={{ fontFamily: "Inter, sans-serif", color: "#E0E0E0" }}
             >
-              Africa's most trusted school fees payment platform. Secure, simple, and designed for modern parents and institutions.
+              {
+                "Africa's most trusted school fees payment platform. Secure, simple, and designed for modern parents and institutions."
+              }
             </motion.p>
 
             {/* CTAs */}
@@ -248,7 +262,11 @@ export default function Home() {
               variants={fadeUp}
               className="mt-16 flex flex-wrap justify-center items-center gap-8"
             >
-              {["Bank-Grade Security", "Instant Notifications", "24/7 Support"].map((badge, i) => (
+              {[
+                "Bank-Grade Security",
+                "Instant Notifications",
+                "24/7 Support",
+              ].map((badge, i) => (
                 <motion.div
                   key={badge}
                   className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg"
@@ -257,7 +275,10 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 1 + i * 0.1 }}
                 >
-                  <CheckCircle className="w-4 h-4 text-white" style={{ color: "#90EE90" }} />
+                  <CheckCircle
+                    className="w-4 h-4 text-white"
+                    style={{ color: "#90EE90" }}
+                  />
                   <span className="text-white text-sm">{badge}</span>
                 </motion.div>
               ))}
@@ -284,7 +305,12 @@ export default function Home() {
             {[
               { label: "Schools", value: 5000, suffix: "+" },
               { label: "Happy Parents", value: 150000, suffix: "+" },
-              { label: "Payments Processed", value: 50, suffix: "M", prefix: "₦" },
+              {
+                label: "Payments Processed",
+                value: 50,
+                suffix: "M",
+                prefix: "₦",
+              },
               { label: "Countries", value: 12, suffix: "" },
             ].map((stat) => (
               <motion.div
@@ -295,13 +321,19 @@ export default function Home() {
               >
                 <div
                   className="text-4xl sm:text-5xl font-bold mb-2"
-                  style={{ color: "#000080", fontFamily: "Poppins, sans-serif" }}
+                  style={{
+                    color: "#000080",
+                    fontFamily: "Poppins, sans-serif",
+                  }}
                 >
                   {stat.prefix}
                   <Counter end={stat.value} />
                   {stat.suffix}
                 </div>
-                <div className="text-sm sm:text-base" style={{ color: "#808080" }}>
+                <div
+                  className="text-sm sm:text-base"
+                  style={{ color: "#808080" }}
+                >
                   {stat.label}
                 </div>
               </motion.div>
@@ -314,79 +346,85 @@ export default function Home() {
       <section id="how-it-works">
         <Section className="py-20 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div variants={fadeUp} className="text-center mb-16">
-            <h2
-              className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4"
-              style={{ color: "#000080", fontFamily: "Poppins, sans-serif" }}
-            >
-              How Payng Works
-            </h2>
-            <p className="text-lg" style={{ color: "#808080" }}>
-              Three simple steps to stress-free school fee payments
-            </p>
-          </motion.div>
+            <motion.div variants={fadeUp} className="text-center mb-16">
+              <h2
+                className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4"
+                style={{ color: "#000080", fontFamily: "Poppins, sans-serif" }}
+              >
+                How Payng Works
+              </h2>
+              <p className="text-lg" style={{ color: "#808080" }}>
+                Three simple steps to stress-free school fee payments
+              </p>
+            </motion.div>
 
             <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                icon: Users,
-                step: "01",
-                title: "Create Account",
-                description: "Sign up in minutes as a parent or institution. No paperwork, no hassle.",
-              },
-              {
-                icon: CreditCard,
-                step: "02",
-                title: "Link Students",
-                description: "Add your children and their schools. Choose payment plans that work for you.",
-              },
-              {
-                icon: CheckCircle,
-                step: "03",
-                title: "Pay & Track",
-                description: "Make secure payments and get instant confirmation. Track everything in one place.",
-              },
-            ].map((item) => (
-              <motion.div
-                key={item.step}
-                variants={fadeUp}
-                className="relative p-8 bg-white rounded-lg transition-all duration-300 hover:scale-105"
-                style={{
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                  borderRadius: "8px",
-                }}
-                whileHover={{
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-                  border: "1px solid #90EE90",
-                }}
-              >
-                <div
-                  className="absolute -top-4 left-8 w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold"
+              {[
+                {
+                  icon: Users,
+                  step: "01",
+                  title: "Create Account",
+                  description:
+                    "Sign up in minutes as a parent or institution. No paperwork, no hassle.",
+                },
+                {
+                  icon: CreditCard,
+                  step: "02",
+                  title: "Link Students",
+                  description:
+                    "Add your children and their schools. Choose payment plans that work for you.",
+                },
+                {
+                  icon: CheckCircle,
+                  step: "03",
+                  title: "Pay & Track",
+                  description:
+                    "Make secure payments and get instant confirmation. Track everything in one place.",
+                },
+              ].map((item) => (
+                <motion.div
+                  key={item.step}
+                  variants={fadeUp}
+                  className="relative p-8 bg-white rounded-lg transition-all duration-300 hover:scale-105"
                   style={{
-                    backgroundColor: "#90EE90",
-                    color: "#000000",
-                    fontFamily: "Poppins, sans-serif",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                    borderRadius: "8px",
+                  }}
+                  whileHover={{
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+                    border: "1px solid #90EE90",
                   }}
                 >
-                  {item.step}
-                </div>
-                <div
-                  className="w-16 h-16 rounded-lg flex items-center justify-center mb-6 mx-auto mt-4"
-                  style={{ backgroundColor: "#000080" }}
-                >
-                  <item.icon className="w-8 h-8 text-white" />
-                </div>
-                <h3
-                  className="text-xl font-bold mb-3 text-center"
-                  style={{ color: "#000080", fontFamily: "Poppins, sans-serif" }}
-                >
-                  {item.title}
-                </h3>
-                <p className="text-center" style={{ color: "#808080" }}>
-                  {item.description}
-                </p>
-              </motion.div>
-            ))}
+                  <div
+                    className="absolute -top-4 left-8 w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold"
+                    style={{
+                      backgroundColor: "#90EE90",
+                      color: "#000000",
+                      fontFamily: "Poppins, sans-serif",
+                    }}
+                  >
+                    {item.step}
+                  </div>
+                  <div
+                    className="w-16 h-16 rounded-lg flex items-center justify-center mb-6 mx-auto mt-4"
+                    style={{ backgroundColor: "#000080" }}
+                  >
+                    <item.icon className="w-8 h-8 text-white" />
+                  </div>
+                  <h3
+                    className="text-xl font-bold mb-3 text-center"
+                    style={{
+                      color: "#000080",
+                      fontFamily: "Poppins, sans-serif",
+                    }}
+                  >
+                    {item.title}
+                  </h3>
+                  <p className="text-center" style={{ color: "#808080" }}>
+                    {item.description}
+                  </p>
+                </motion.div>
+              ))}
             </div>
           </div>
         </Section>
@@ -412,32 +450,38 @@ export default function Home() {
               {
                 icon: Zap,
                 title: "Instant Payments",
-                description: "Process payments in seconds with multiple payment options including cards, bank transfers, and mobile money.",
+                description:
+                  "Process payments in seconds with multiple payment options including cards, bank transfers, and mobile money.",
               },
               {
                 icon: Bell,
                 title: "Smart Reminders",
-                description: "Never miss a payment deadline with automated SMS and email notifications.",
+                description:
+                  "Never miss a payment deadline with automated SMS and email notifications.",
               },
               {
                 icon: FileText,
                 title: "Digital Receipts",
-                description: "Get instant digital receipts and maintain a complete payment history.",
+                description:
+                  "Get instant digital receipts and maintain a complete payment history.",
               },
               {
                 icon: BarChart3,
                 title: "Payment Analytics",
-                description: "Track spending trends and manage budgets with detailed reports and insights.",
+                description:
+                  "Track spending trends and manage budgets with detailed reports and insights.",
               },
               {
                 icon: Lock,
                 title: "Bank-Grade Security",
-                description: "Your data is protected with military-grade encryption and PCI DSS compliance.",
+                description:
+                  "Your data is protected with military-grade encryption and PCI DSS compliance.",
               },
               {
                 icon: TrendingUp,
                 title: "Flexible Payment Plans",
-                description: "Spread payments over time with customizable installment plans.",
+                description:
+                  "Spread payments over time with customizable installment plans.",
               },
             ].map((feature) => (
               <motion.div
@@ -462,7 +506,10 @@ export default function Home() {
                 </div>
                 <h3
                   className="text-lg font-bold mb-2"
-                  style={{ color: "#000080", fontFamily: "Poppins, sans-serif" }}
+                  style={{
+                    color: "#000080",
+                    fontFamily: "Poppins, sans-serif",
+                  }}
                 >
                   {feature.title}
                 </h3>
@@ -519,7 +566,10 @@ export default function Home() {
               <div>
                 <p
                   className="font-bold"
-                  style={{ color: "#000080", fontFamily: "Poppins, sans-serif" }}
+                  style={{
+                    color: "#000080",
+                    fontFamily: "Poppins, sans-serif",
+                  }}
                 >
                   {testimonials[activeTestimonial].name}
                 </p>
@@ -534,7 +584,8 @@ export default function Home() {
               <button
                 onClick={() =>
                   setActiveTestimonial(
-                    (prev) => (prev - 1 + testimonials.length) % testimonials.length
+                    (prev) =>
+                      (prev - 1 + testimonials.length) % testimonials.length
                   )
                 }
                 className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
@@ -549,14 +600,17 @@ export default function Home() {
                     onClick={() => setActiveTestimonial(i)}
                     className="w-2 h-2 rounded-full transition-all duration-300"
                     style={{
-                      backgroundColor: i === activeTestimonial ? "#000080" : "#E0E0E0",
+                      backgroundColor:
+                        i === activeTestimonial ? "#000080" : "#E0E0E0",
                     }}
                   />
                 ))}
               </div>
               <button
                 onClick={() =>
-                  setActiveTestimonial((prev) => (prev + 1) % testimonials.length)
+                  setActiveTestimonial(
+                    (prev) => (prev + 1) % testimonials.length
+                  )
                 }
                 className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
                 style={{ backgroundColor: "#000080" }}
@@ -572,15 +626,22 @@ export default function Home() {
       <Section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div variants={fadeUp} className="text-center mb-16">
-            <Lock className="w-16 h-16 mx-auto mb-6" style={{ color: "#000080" }} />
+            <Lock
+              className="w-16 h-16 mx-auto mb-6"
+              style={{ color: "#000080" }}
+            />
             <h2
               className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4"
               style={{ color: "#000080", fontFamily: "Poppins, sans-serif" }}
             >
               Bank-Grade Security
             </h2>
-            <p className="text-lg max-w-2xl mx-auto" style={{ color: "#808080" }}>
-              Your payments and personal information are protected with military-grade encryption and PCI DSS Level 1 compliance
+            <p
+              className="text-lg max-w-2xl mx-auto"
+              style={{ color: "#808080" }}
+            >
+              Your payments and personal information are protected with
+              military-grade encryption and PCI DSS Level 1 compliance
             </p>
           </motion.div>
 
@@ -588,13 +649,23 @@ export default function Home() {
             variants={fadeUp}
             className="flex flex-wrap justify-center items-center gap-8 mb-12"
           >
-            {["256-bit SSL", "PCI DSS Compliant", "ISO Certified", "2FA Protected"].map((badge) => (
+            {[
+              "256-bit SSL",
+              "PCI DSS Compliant",
+              "ISO Certified",
+              "2FA Protected",
+            ].map((badge) => (
               <div
                 key={badge}
                 className="px-6 py-3 bg-white rounded-lg"
                 style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
               >
-                <span style={{ color: "#000080", fontFamily: "Poppins, sans-serif" }}>
+                <span
+                  style={{
+                    color: "#000080",
+                    fontFamily: "Poppins, sans-serif",
+                  }}
+                >
                   {badge}
                 </span>
               </div>
@@ -694,19 +765,25 @@ export default function Home() {
                 </div>
                 <span
                   className="text-xl font-bold"
-                  style={{ color: "#FFFFFF", fontFamily: "Poppins, sans-serif" }}
+                  style={{
+                    color: "#FFFFFF",
+                    fontFamily: "Poppins, sans-serif",
+                  }}
                 >
                   Payng
                 </span>
               </div>
               <p className="text-gray-400 text-sm">
-                Africa's most trusted school fees payment platform
+                {"Africa's most trusted school fees payment platform"}
               </p>
             </div>
 
             {/* Quick Links */}
             <div>
-              <h4 className="font-bold mb-4" style={{ fontFamily: "Poppins, sans-serif" }}>
+              <h4
+                className="font-bold mb-4"
+                style={{ fontFamily: "Poppins, sans-serif" }}
+              >
                 Product
               </h4>
               <ul className="space-y-2 text-sm text-gray-400">
@@ -722,7 +799,10 @@ export default function Home() {
 
             {/* Company */}
             <div>
-              <h4 className="font-bold mb-4" style={{ fontFamily: "Poppins, sans-serif" }}>
+              <h4
+                className="font-bold mb-4"
+                style={{ fontFamily: "Poppins, sans-serif" }}
+              >
                 Company
               </h4>
               <ul className="space-y-2 text-sm text-gray-400">
@@ -738,7 +818,10 @@ export default function Home() {
 
             {/* Contact */}
             <div>
-              <h4 className="font-bold mb-4" style={{ fontFamily: "Poppins, sans-serif" }}>
+              <h4
+                className="font-bold mb-4"
+                style={{ fontFamily: "Poppins, sans-serif" }}
+              >
                 Contact
               </h4>
               <ul className="space-y-3 text-sm text-gray-400">
